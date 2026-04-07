@@ -1,0 +1,35 @@
+# ── OAuth2 & Credentials (NEVER commit these) ─────────────────────────────────
+credentials.json
+token.pickle
+token.json
+
+# ── Personal Data & Databases ─────────────────────────────────────────────────
+finance_os.db           # SQLite — your financial transactions
+chroma_db/              # ChromaDB vector store (your email embeddings)
+processed_cache.txt     # Email ID cache
+last_run.json           # Sync checkpoint
+resume_oldest.json      # Backfill resume anchor
+rejected_emails.txt     # Rejection log
+accepted_emails.md      # Accepted transactions export
+
+# ── Python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+
+# ── Virtual Environment ───────────────────────────────────────────────────────
+venv/
+env/
+.venv/
+
+# ── Environment Variables ─────────────────────────────────────────────────────
+.env
+.env.local
+
+# ── macOS ─────────────────────────────────────────────────────────────────────
+.DS_Store

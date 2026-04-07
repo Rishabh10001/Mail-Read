@@ -1,0 +1,10 @@
+google-api-python-client
+google-auth-oauthlib
+google-auth-httplib2
+langchain
+langchain-ollama
+langchain-chroma
+langchain-community
+beautifulsoup4
+chromadb
+pysqlite3-binary
