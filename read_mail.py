@@ -12,8 +12,7 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from process_mail import process_emails
-from utils import update_last_run_time
-from vector_store import get_db
+from utils import update_last_run_time, get_last_run_time
 
 def load_processed_cache():
     if os.path.exists("processed_cache.txt"):
@@ -150,16 +149,13 @@ def fetch_and_ingest(after=None):
             if not fresh_emails:
                 print("⏭️  All emails in this page already processed. Skipping AI extraction...")
             else:
-                docs = process_emails(fresh_emails) 
-                if docs:
-                    ids = [doc.metadata["chunk_id"] for doc in docs]
-                    get_db().add_documents(docs, ids=ids)
-                    print(f"📥 Ingested {len(docs)} chunks into Vector DB.") 
-                
+                process_emails(fresh_emails)
+                print(f"✅ Processed {len(fresh_emails)} emails → SQL.")
+
                 # Lock these emails into cache so they are permanently immune to restarts
                 append_to_cache([e['email_id'] for e in fresh_emails])
             
-            # Use 'max' timestamp to keep track of the absolute highest timestamp seen
+            # Track the highest timestamp seen across all pages
             valid_ts = [e['date_ts'] for e in page_emails if e.get('date_ts')]
             if valid_ts:
                 page_max = max(valid_ts) / 1000 
@@ -167,6 +163,14 @@ def fetch_and_ingest(after=None):
                 if page_max > sync_max_ts:
                     sync_max_ts = page_max
                 print(f"🗓️  Historical Timeline: {time.ctime(page_min)}")
+
+                # ── Save checkpoint after EVERY page ─────────────────────────
+                # Gmail returns newest-first, so after page 1 the checkpoint
+                # is already at the most recent email. If interrupted, the next
+                # run starts from here — no full inbox rescan needed.
+                stored = get_last_run_time()
+                if stored is None or sync_max_ts > stored:
+                    update_last_run_time(sync_max_ts)
                 
                 # Anchor the backfill marker so if aborted, it only queries emails OLDER than this
                 if not after:
@@ -180,15 +184,7 @@ def fetch_and_ingest(after=None):
         print("⏳ Port cooling down (3s)...")
         time.sleep(3)
 
-    # Only update the final watermark ONCE the entire sync finishes!
-    # This guarantees that if you abort midway, the system isn't tricked into thinking it finished the whole inbox.
-    if sync_max_ts > 0:
-        current_checkpoint = get_last_run_time()
-        if current_checkpoint is None or sync_max_ts > current_checkpoint:
-            update_last_run_time(sync_max_ts)
-            print(f"💾 Sync Completed. Watermark firmly updated to: {time.ctime(sync_max_ts)}")
-
     if os.path.exists("resume_oldest.json"):
         os.remove("resume_oldest.json")
 
-    print(f"\n🎉 Sync Complete.")
+    print(f"\n🎉 Sync Complete. Checkpoint: {time.ctime(sync_max_ts) if sync_max_ts else 'N/A'}")

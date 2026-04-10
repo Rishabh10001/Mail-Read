@@ -5,12 +5,9 @@ token.json
 
 # ── Personal Data & Databases ─────────────────────────────────────────────────
 finance_os.db           # SQLite — your financial transactions
-chroma_db/              # ChromaDB vector store (your email embeddings)
 processed_cache.txt     # Email ID cache
 last_run.json           # Sync checkpoint
-resume_oldest.json      # Backfill resume anchor
 rejected_emails.txt     # Rejection log
-accepted_emails.md      # Accepted transactions export
 
 # ── Python ────────────────────────────────────────────────────────────────────
 __pycache__/

@@ -1,0 +1,1920 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Finance OS</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0d1117;
+      --surface:   #161b22;
+      --surface2:  #1c2128;
+      --border:    #30363d;
+      --text:      #e6edf3;
+      --muted:     #8b949e;
+      --subtle:    #6e7681;
+      --blue:      #58a6ff;
+      --green:     #3fb950;
+      --red:       #f85149;
+      --purple:    #a371f7;
+      --yellow:    #e3b341;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      font-size: 14px;
+    }
+
+    /* ── Layout ─────────────────────────────────────────────────── */
+    .layout { display: flex; height: 100vh; overflow: hidden; }
+
+    /* ── Sidebar ────────────────────────────────────────────────── */
+    .sidebar {
+      width: 220px;
+      min-width: 220px;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      padding: 1rem 0 1.5rem;
+    }
+
+    .sidebar-logo {
+      padding: 0 1.25rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 0.75rem;
+    }
+    .sidebar-logo h1 { font-size: 1rem; font-weight: 700; letter-spacing: -0.3px; }
+    .sidebar-logo p  { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+
+    .nav-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      padding: 0.5rem 1rem;
+      margin: 1px 0.5rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      color: var(--muted);
+      border: none;
+      background: none;
+      width: calc(100% - 1rem);
+      text-align: left;
+      font-family: inherit;
+      transition: background 0.12s, color 0.12s;
+    }
+    .nav-btn:hover  { background: var(--surface2); color: var(--text); }
+    .nav-btn.active { background: rgba(88,166,255,.12); color: var(--blue); font-weight: 500; }
+    .nav-icon { font-size: 1rem; width: 18px; text-align: center; }
+
+    /* ── Main ───────────────────────────────────────────────────── */
+    .main { flex: 1; overflow-y: auto; }
+
+    .page {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 2rem 2.5rem;
+    }
+
+    .page-header { margin-bottom: 1.75rem; }
+    .page-header h2 { font-size: 1.4rem; font-weight: 700; letter-spacing: -0.4px; }
+    .page-header p  { color: var(--muted); font-size: 0.82rem; margin-top: 3px; }
+    .page-header-row { display: flex; justify-content: space-between; align-items: flex-start; }
+
+    /* ── Cards ──────────────────────────────────────────────────── */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.1rem 1.25rem;
+    }
+    .card-label { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.6px; font-weight: 600; }
+    .card-value { font-size: 1.45rem; font-weight: 700; letter-spacing: -0.5px; margin-top: 0.4rem; }
+    .card-sub   { font-size: 0.72rem; color: var(--muted); margin-top: 3px; }
+    .c-green  { color: var(--green); }
+    .c-red    { color: var(--red); }
+    .c-blue   { color: var(--blue); }
+    .c-purple { color: var(--purple); }
+    .c-yellow { color: var(--yellow); }
+    .c-muted  { color: var(--muted);  }
+
+    .delta { font-size: 0.75rem; font-weight: 600; margin-top: 4px; display: flex; align-items: center; gap: 4px; }
+    .delta-up   { color: var(--red);   }
+    .delta-down { color: var(--green); }
+    .delta-neutral { color: var(--muted); }
+
+    .section-label {
+      font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.6px; color: var(--muted); margin-bottom: 0.6rem;
+    }
+
+    /* Projection */
+    .proj-card {
+      border-radius: 10px;
+      padding: 1.1rem 1.5rem;
+      margin-bottom: 1.25rem;
+      background: linear-gradient(135deg, rgba(88,166,255,.06) 0%, rgba(163,113,247,.06) 100%);
+      border: 1px solid rgba(88,166,255,.22);
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 1.5rem;
+      align-items: center;
+    }
+    .proj-head { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: baseline; }
+    .proj-title { font-size: 0.82rem; font-weight: 700; color: var(--blue); letter-spacing: 0.2px; }
+    .proj-pace  { font-size: 0.78rem; color: var(--muted); }
+    .prog-track { height: 5px; background: var(--surface2); border-radius: 3px; overflow: hidden; margin: 0.5rem 0 0; }
+    .prog-fill  { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--blue), var(--purple)); }
+    .proj-stat  {}
+    .proj-stat-label { font-size: 0.68rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    .proj-stat-value { font-size: 1.1rem; font-weight: 700; margin-top: 3px; }
+
+    /* Month picker */
+    .month-picker { display: flex; align-items: center; gap: 0.5rem; }
+    .month-picker label { font-size: 0.78rem; color: var(--muted); }
+
+    /* ── Charts ─────────────────────────────────────────────────── */
+    .charts-row {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+    }
+    .chart-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.1rem 1.25rem;
+    }
+    .chart-title { font-size: 0.82rem; font-weight: 600; margin-bottom: 1rem; }
+
+    /* ── Table ──────────────────────────────────────────────────── */
+    .table-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .table-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.85rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .table-title { font-size: 0.82rem; font-weight: 600; }
+
+    table { width: 100%; border-collapse: collapse; }
+    thead th {
+      padding: 0.65rem 1rem;
+      text-align: left;
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface2);
+      cursor: pointer;
+      user-select: none;
+      white-space: nowrap;
+    }
+    thead th:hover { color: var(--text); }
+    tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: var(--surface2); }
+    td { padding: 0.65rem 1rem; font-size: 0.85rem; }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+    .badge-debit  { background: rgba(248,81,73,.15);  color: var(--red);   }
+    .badge-credit { background: rgba(63,185,80,.15);  color: var(--green); }
+    .badge-cat    { background: rgba(163,113,247,.12); color: var(--purple); }
+
+    .merchant-name { font-weight: 500; }
+    .amount-debit  { color: var(--red);   font-weight: 600; }
+    .amount-credit { color: var(--green); font-weight: 600; }
+    .date-text     { color: var(--muted); }
+    .notes-text    { color: var(--subtle); max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
+
+    /* ── Pagination ─────────────────────────────────────────────── */
+    .pagination {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.85rem 1.25rem;
+      border-top: 1px solid var(--border);
+    }
+    .pagination-info { font-size: 0.78rem; color: var(--muted); }
+    .pagination-btns { display: flex; align-items: center; gap: 0.5rem; }
+    .page-num { font-size: 0.78rem; color: var(--muted); padding: 0 0.25rem; }
+
+    /* ── Buttons ────────────────────────────────────────────────── */
+    .btn {
+      padding: 0.45rem 0.9rem;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--text);
+      font-family: inherit;
+      transition: background 0.12s, border-color 0.12s;
+      white-space: nowrap;
+    }
+    .btn:hover    { background: var(--border); }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .btn-primary { background: var(--blue); border-color: var(--blue); color: #000; font-weight: 600; }
+    .btn-primary:hover:not(:disabled) { background: #79c0ff; }
+
+    .btn-success { background: rgba(63,185,80,.1); border-color: rgba(63,185,80,.3); color: var(--green); }
+    .btn-success:hover:not(:disabled) { background: rgba(63,185,80,.2); }
+
+    .btn-danger { background: rgba(248,81,73,.1); border-color: rgba(248,81,73,.3); color: var(--red); }
+    .btn-danger:hover:not(:disabled) { background: rgba(248,81,73,.2); }
+
+    /* ── Filters ────────────────────────────────────────────────── */
+    .filters { display: flex; gap: 0.75rem; margin-bottom: 1rem; flex-wrap: wrap; align-items: center; }
+
+    .filter-input, .filter-select {
+      padding: 0.45rem 0.75rem;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      font-size: 0.8rem;
+      font-family: inherit;
+    }
+    .filter-input:focus, .filter-select:focus { outline: none; border-color: var(--blue); }
+    .filter-input { min-width: 200px; }
+    .filter-select option { background: var(--surface2); }
+
+    /* ── Chat ───────────────────────────────────────────────────── */
+    .chat-wrap {
+      display: flex;
+      flex-direction: column;
+      height: calc(100vh - 5rem);
+    }
+    .chat-messages { flex: 1; overflow-y: auto; padding: 0.5rem 0 1rem; }
+
+    .message { display: flex; gap: 0.65rem; margin-bottom: 1.1rem; }
+    .message.user { flex-direction: row-reverse; margin-left: auto; max-width: 80%; }
+    .message.assistant { max-width: 85%; }
+
+    .avatar {
+      width: 30px; height: 30px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.7rem; font-weight: 700;
+      flex-shrink: 0;
+    }
+    .avatar-user      { background: rgba(88,166,255,.2); color: var(--blue); }
+    .avatar-assistant { background: rgba(163,113,247,.2); color: var(--purple); }
+
+    .bubble {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.65rem 0.9rem;
+    }
+    .bubble-user {
+      background: rgba(88,166,255,.08);
+      border-color: rgba(88,166,255,.2);
+    }
+    .bubble-text { font-size: 0.875rem; white-space: pre-wrap; line-height: 1.6; }
+
+    .sql-toggle {
+      display: flex; align-items: center; gap: 4px;
+      margin-top: 0.45rem;
+      font-size: 0.72rem; color: var(--muted);
+      cursor: pointer; user-select: none;
+    }
+    .sql-toggle:hover { color: var(--blue); }
+    .sql-block {
+      margin-top: 0.45rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.5rem 0.75rem;
+      font-family: 'Courier New', monospace;
+      font-size: 0.72rem;
+      color: var(--purple);
+      overflow-x: auto;
+      line-height: 1.5;
+    }
+
+    .chat-input-area { padding: 0.75rem 0 0; border-top: 1px solid var(--border); }
+    .chat-input-row  { display: flex; gap: 0.65rem; }
+    .chat-input {
+      flex: 1;
+      padding: 0.65rem 0.9rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      font-size: 0.875rem;
+      font-family: inherit;
+      resize: none;
+    }
+    .chat-input:focus { outline: none; border-color: var(--blue); }
+
+    /* ── Modal ──────────────────────────────────────────────────── */
+    .modal-backdrop {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.55);
+      backdrop-filter: blur(2px);
+      z-index: 100;
+      display: flex; align-items: center; justify-content: center;
+      padding: 1.5rem;
+      animation: fadeIn 0.12s ease;
+    }
+    @keyframes fadeIn { from { opacity:0 } to { opacity:1 } }
+
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      width: 100%;
+      max-width: 480px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.5);
+      animation: slideUp 0.14s ease;
+    }
+    @keyframes slideUp { from { transform:translateY(12px); opacity:0 } to { transform:translateY(0); opacity:1 } }
+
+    .modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1rem 1.25rem 0.75rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .modal-title { font-size: 0.95rem; font-weight: 600; }
+    .modal-close {
+      background: none; border: none; color: var(--muted);
+      font-size: 1.1rem; cursor: pointer; padding: 2px 6px;
+      border-radius: 4px; line-height: 1;
+    }
+    .modal-close:hover { background: var(--surface2); color: var(--text); }
+
+    .modal-body { padding: 1rem 1.25rem 1.25rem; }
+
+    .tx-amount-hero {
+      text-align: center;
+      padding: 1rem 0 1.1rem;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 1rem;
+    }
+    .tx-amount-hero .amount { font-size: 2rem; font-weight: 700; letter-spacing: -1px; }
+    .tx-amount-hero .meta   { font-size: 0.78rem; color: var(--muted); margin-top: 4px; }
+
+    .tx-fields { display: flex; flex-direction: column; gap: 0.6rem; }
+    .tx-field  { display: flex; align-items: flex-start; gap: 0.75rem; }
+    .tx-field-label {
+      font-size: 0.7rem; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.5px; color: var(--muted);
+      min-width: 80px; padding-top: 1px;
+    }
+    .tx-field-value { font-size: 0.85rem; color: var(--text); flex: 1; word-break: break-word; }
+
+    /* ── Sync ───────────────────────────────────────────────────── */
+    .sync-grid { display: grid; grid-template-columns: 260px 1fr; gap: 1rem; }
+
+    .dot {
+      display: inline-block;
+      width: 9px; height: 9px;
+      border-radius: 50%;
+      margin-right: 7px;
+      vertical-align: middle;
+    }
+    .dot-on  { background: var(--green); box-shadow: 0 0 6px var(--green); animation: blink 2s ease-in-out infinite; }
+    .dot-off { background: var(--subtle); }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+    .log-viewer {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.75rem 1rem;
+      font-family: 'Courier New', monospace;
+      font-size: 0.72rem;
+      color: var(--green);
+      height: 320px;
+      overflow-y: auto;
+      line-height: 1.75;
+    }
+
+    /* ── Misc ───────────────────────────────────────────────────── */
+    .loading { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 0.85rem; }
+    .spinner {
+      width: 15px; height: 15px;
+      border: 2px solid var(--border);
+      border-top-color: var(--blue);
+      border-radius: 50%;
+      animation: spin 0.75s linear infinite;
+      flex-shrink: 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .empty { text-align: center; padding: 2.5rem; color: var(--muted); }
+
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--subtle); }
+
+    /* ── Responsive ─────────────────────────────────────────────── */
+    @media (max-width: 960px) {
+      .cards-grid { grid-template-columns: repeat(2,1fr); }
+      .charts-row { grid-template-columns: 1fr; }
+      .sync-grid  { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"><div style="display:flex;align-items:center;justify-content:center;height:100vh;color:#8b949e;font-family:Inter,sans-serif;gap:12px"><div style="width:18px;height:18px;border:2px solid #30363d;border-top-color:#58a6ff;border-radius:50%;animation:spin .75s linear infinite"></div>Loading…</div></div>
+
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+// ── Utils ────────────────────────────────────────────────────────────────────
+function inr(n) {
+  if (n === null || n === undefined) return '—';
+  return '₹' + Math.abs(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function fmtDate(s) {
+  if (!s) return '—';
+  try {
+    const d = new Date(s);
+    return isNaN(d) ? s : d.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
+  } catch { return s; }
+}
+
+function monthLabel(ym) {
+  const [y, m] = ym.split('-');
+  return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+m-1] + " '" + y.slice(2);
+}
+
+function monthToDateRange(ym) {
+  const [y, m] = ym.split('-').map(Number);
+  const lastDay = new Date(y, m, 0).getDate();
+  return { fromDate: `${ym}-01`, toDate: `${ym}-${String(lastDay).padStart(2,'0')}` };
+}
+
+function currentYM() {
+  return new Date().toISOString().slice(0, 7); // "2026-04"
+}
+
+async function apiFetch(path, opts = {}) {
+  const res = await fetch(path, { headers:{'Content-Type':'application/json'}, ...opts });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+// ── Dashboard ────────────────────────────────────────────────────────────────
+// ── All-time summary (static, no month dependency) ───────────────────────────
+function AllTimeSummary() {
+  const [s, setS] = useState(null);
+  useEffect(() => { apiFetch('/api/stats/summary').then(setS).catch(console.error); }, []);
+  if (!s) return (
+    <div className="cards-grid" style={{marginBottom:'1.5rem'}}>
+      {[1,2,3,4].map(i => <div key={i} className="card"><div className="card-label">Loading…</div><div className="card-value" style={{color:'var(--border)'}}>—</div></div>)}
+    </div>
+  );
+  return (
+    <div className="cards-grid" style={{marginBottom:'1.5rem'}}>
+      <div className="card"><div className="card-label">Total Income</div><div className="card-value c-green">{inr(s.total_income)}</div><div className="card-sub">All credits</div></div>
+      <div className="card"><div className="card-label">Total Expenses</div><div className="card-value c-red">{inr(s.total_expenses)}</div><div className="card-sub">All debits</div></div>
+      <div className="card"><div className="card-label">Net Balance</div><div className={`card-value ${s.net_balance>=0?'c-green':'c-red'}`}>{inr(Math.abs(s.net_balance))}</div><div className="card-sub">{s.net_balance>=0?'Surplus':'Deficit'}</div></div>
+      <div className="card"><div className="card-label">Transactions</div><div className="card-value c-blue">{s.total_transactions.toLocaleString()}</div><div className="card-sub">Total count</div></div>
+    </div>
+  );
+}
+
+// ── Month analysis (reactive to selected month) ───────────────────────────────
+function MonthlyAnalysis({ month, onMonthClick }) {
+  const [d, setD] = useState(null);
+
+  useEffect(() => {
+    setD(null);
+    const url = month ? `/api/stats/thismonth?month=${month}` : '/api/stats/thismonth';
+    apiFetch(url).then(setD).catch(console.error);
+  }, [month]);
+
+  function Delta({ pct, label, invertColor }) {
+    if (pct === null || pct === undefined) return <span className="delta delta-neutral">— no prior data</span>;
+    const up = pct > 0;
+    const cls = invertColor ? (up ? 'delta-down' : 'delta-up') : (up ? 'delta-up' : 'delta-down');
+    return <span className={`delta ${cls}`}>{up?'↑':'↓'} {Math.abs(pct)}% vs {d?.last_month}</span>;
+  }
+
+  const SkeletonRow = () => (
+    <div className="cards-grid" style={{marginBottom:'1.25rem'}}>
+      {[1,2,3,4].map(i => <div key={i} className="card"><div className="card-label">Loading…</div><div className="card-value" style={{color:'var(--border)'}}>—</div></div>)}
+    </div>
+  );
+
+  return (
+    <>
+      <div className="section-label">{d?.this_month || (month ? month : 'This Month')}</div>
+      {!d ? <SkeletonRow /> : (
+        <>
+          <div className="cards-grid" style={{marginBottom:'1rem'}}>
+            <div className="card">
+              <div className="card-label">Spent</div>
+              <div className="card-value c-red">{inr(d.spend)}</div>
+              <Delta pct={d.spend_delta} invertColor={false} />
+            </div>
+            <div className="card">
+              <div className="card-label">Earned</div>
+              <div className="card-value c-green">{inr(d.income)}</div>
+              <Delta pct={d.income_delta} invertColor={true} />
+            </div>
+            <div className="card">
+              <div className="card-label">Avg Transaction</div>
+              <div className="card-value c-purple">{inr(d.avg_debit)}</div>
+              <div className="card-sub">{d.tx_count} debits</div>
+            </div>
+            <div className="card">
+              <div className="card-label">Biggest Expense</div>
+              <div className="card-value c-yellow" style={{fontSize:'1.15rem'}}>{d.biggest ? inr(d.biggest.amount) : '—'}</div>
+              <div className="card-sub" style={{overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}} title={d.biggest?.merchant}>{d.biggest?.merchant || 'No data'}</div>
+            </div>
+          </div>
+
+          {/* Projection — only for current month */}
+          {d.is_current_month && d.projection && (
+            <div className="proj-card" onClick={() => onMonthClick && onMonthClick(month || currentYM())} style={{cursor: onMonthClick ? 'pointer' : 'default'}}>
+              <div className="proj-head">
+                <span className="proj-title">📈 Projected Month Spend — {d.this_month}</span>
+                <span className="proj-pace">Day {d.projection.days_elapsed} of {d.projection.days_in_month} · {inr(d.projection.daily_rate)}/day avg · <span style={{color:'var(--blue)'}}>View transactions →</span></span>
+              </div>
+              <div style={{gridColumn:'1/-1'}}>
+                <div className="prog-track">
+                  <div className="prog-fill" style={{width:`${d.projection.pct_elapsed}%`}}/>
+                </div>
+                <div style={{display:'flex', justifyContent:'space-between', fontSize:'0.7rem', color:'var(--muted)', marginTop:'2px'}}>
+                  <span>{d.projection.pct_elapsed}% of month elapsed</span>
+                  <span>{d.projection.days_in_month - d.projection.days_elapsed} days remaining</span>
+                </div>
+              </div>
+              <div className="proj-stat">
+                <div className="proj-stat-label">Projected Total</div>
+                <div className="proj-stat-value c-red">{inr(d.projection.projected_spend)}</div>
+              </div>
+              <div className="proj-stat">
+                <div className="proj-stat-label">Spent So Far</div>
+                <div className="proj-stat-value c-yellow">{inr(d.spend)}</div>
+              </div>
+              <div className="proj-stat">
+                <div className="proj-stat-label">Expected Remaining</div>
+                <div className="proj-stat-value c-muted">{inr(d.projection.remaining_spend)}</div>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+    </>
+  );
+}
+
+function RecentTransactions({ month }) {
+  const [txs, setTxs] = useState(null);
+
+  useEffect(() => {
+    setTxs(null);
+    const url = month ? `/api/stats/recent?month=${month}&limit=10` : '/api/stats/recent?limit=8';
+    apiFetch(url).then(d => setTxs(d.transactions)).catch(console.error);
+  }, [month]);
+
+  return (
+    <div className="table-card">
+      <div className="table-header">
+        <span className="table-title">{month ? `Transactions — ${monthLabel(month)}` : 'Recent Transactions'}</span>
+        <span style={{fontSize:'0.75rem',color:'var(--muted)'}}>{txs ? txs.length + ' shown' : ''}</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th><th>Merchant</th><th>Type</th>
+            <th style={{textAlign:'right'}}>Amount</th><th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          {!txs ? (
+            <tr><td colSpan={5} style={{textAlign:'center',padding:'1.5rem'}}>
+              <div className="loading" style={{justifyContent:'center'}}><div className="spinner"/>Loading…</div>
+            </td></tr>
+          ) : txs.length === 0 ? (
+            <tr><td colSpan={5} className="empty">No transactions for this period</td></tr>
+          ) : txs.map((t, i) => (
+            <tr key={i}>
+              <td><span className="date-text">{fmtDate(t.date)}</span></td>
+              <td><span className="merchant-name">{t.merchant || '—'}</span></td>
+              <td><span className={`badge badge-${t.type}`}>{t.type}</span></td>
+              <td style={{textAlign:'right'}}><span className={`amount-${t.type}`}>{inr(t.amount)}</span></td>
+              <td><span className="notes-text" title={t.notes}>{t.notes || '—'}</span></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function MonthlyChart({ onMonthClick }) {
+  const ref = useRef(null);
+  const inst = useRef(null);
+  const dataRef = useRef([]);
+
+  useEffect(() => {
+    apiFetch('/api/stats/monthly').then(({ monthly }) => {
+      if (!ref.current || !monthly.length) return;
+      inst.current?.destroy();
+      dataRef.current = monthly;
+      inst.current = new Chart(ref.current.getContext('2d'), {
+        type: 'bar',
+        data: {
+          labels: monthly.map(m => monthLabel(m.month)),
+          datasets: [
+            { label:'Income',   data: monthly.map(m => m.credit), backgroundColor:'rgba(63,185,80,.7)',  borderColor:'#3fb950', borderWidth:1, borderRadius:3 },
+            { label:'Expenses', data: monthly.map(m => m.debit),  backgroundColor:'rgba(248,81,73,.7)', borderColor:'#f85149', borderWidth:1, borderRadius:3 },
+          ]
+        },
+        options: {
+          responsive:true, maintainAspectRatio:true,
+          animation: { duration: 500 },
+          plugins: {
+            legend: { labels:{ color:'#8b949e', font:{size:11}, boxWidth:12 } },
+            tooltip: { callbacks: { label: c => ` ${c.dataset.label}: ₹${c.raw.toLocaleString('en-IN')}` } }
+          },
+          onClick: (_, elements) => {
+            if (elements.length > 0 && onMonthClick) {
+              onMonthClick(dataRef.current[elements[0].index].month);
+            }
+          },
+          onHover: (event, elements) => {
+            event.native.target.style.cursor = elements.length ? 'pointer' : 'default';
+          },
+          scales: {
+            x: { ticks:{ color:'#8b949e', font:{size:10} }, grid:{ color:'#1c2128' } },
+            y: {
+              ticks: {
+                color:'#8b949e', font:{size:10},
+                callback: v => v>=100000 ? '₹'+(v/100000).toFixed(1)+'L' : v>=1000 ? '₹'+(v/1000).toFixed(0)+'K' : '₹'+v
+              },
+              grid: { color:'#1c2128' }
+            }
+          }
+        }
+      });
+    }).catch(console.error);
+    return () => inst.current?.destroy();
+  }, []);
+
+  return (
+    <div className="chart-card">
+      <div className="chart-title" style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+        <span>Monthly Income vs Expenses</span>
+        <span style={{fontSize:'0.68rem', color:'var(--muted)', fontWeight:400}}>Click bar to filter</span>
+      </div>
+      <canvas ref={ref} height="220"></canvas>
+    </div>
+  );
+}
+
+function MerchantsChart({ month, onMerchantClick }) {
+  const ref = useRef(null);
+  const inst = useRef(null);
+  const dataRef = useRef([]);
+
+  useEffect(() => {
+    const url = month ? `/api/stats/merchants?month=${month}` : '/api/stats/merchants';
+    apiFetch(url).then(({ merchants }) => {
+      if (!ref.current) return;
+      inst.current?.destroy();
+      if (!merchants.length) return;
+      dataRef.current = merchants;
+
+      const totalSpend = merchants.reduce((s, m) => s + m.total, 0);
+      const colors = merchants.map((_, i) => `hsla(${270 + i * 8}, 70%, 65%, 0.8)`);
+
+      inst.current = new Chart(ref.current.getContext('2d'), {
+        type: 'bar',
+        data: {
+          labels: merchants.map(m => m.merchant.length > 18 ? m.merchant.slice(0,17)+'…' : m.merchant),
+          datasets: [{
+            label: 'Spent',
+            data: merchants.map(m => m.total),
+            backgroundColor: colors,
+            borderColor: colors.map(c => c.replace('0.8', '1')),
+            borderWidth: 1,
+            borderRadius: 4,
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: { duration: 500 },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                title: items => dataRef.current[items[0].dataIndex]?.merchant || '',
+                label: item => {
+                  const m = dataRef.current[item.dataIndex];
+                  const pct = totalSpend > 0 ? ((m.total / totalSpend) * 100).toFixed(1) : 0;
+                  return [
+                    `  ₹${m.total.toLocaleString('en-IN')}`,
+                    `  ${m.count} transaction${m.count !== 1 ? 's' : ''}`,
+                    `  ${pct}% of total spend`,
+                  ];
+                }
+              }
+            }
+          },
+          onClick: (_, elements) => {
+            if (elements.length > 0 && onMerchantClick) {
+              onMerchantClick(dataRef.current[elements[0].index].merchant);
+            }
+          },
+          onHover: (event, elements) => {
+            event.native.target.style.cursor = elements.length ? 'pointer' : 'default';
+          },
+          scales: {
+            x: {
+              ticks: { color:'#8b949e', font:{size:10}, callback: v => v>=100000?'₹'+(v/100000).toFixed(1)+'L':v>=1000?'₹'+(v/1000).toFixed(0)+'K':'₹'+v },
+              grid: { color:'#1c2128' }
+            },
+            y: { ticks:{ color:'#8b949e', font:{size:10} }, grid:{ display:false } }
+          }
+        }
+      });
+    }).catch(console.error);
+    return () => inst.current?.destroy();
+  }, [month]);
+
+  return (
+    <div className="chart-card" style={{marginBottom:'1.25rem'}}>
+      <div className="chart-title" style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+        <span>Top Merchants — Spend{month ? ` · ${monthLabel(month)}` : ''}</span>
+        <span style={{fontSize:'0.68rem', color:'var(--muted)', fontWeight:400}}>Click bar to filter</span>
+      </div>
+      <div style={{position:'relative', height:'260px'}}>
+        <canvas ref={ref}></canvas>
+      </div>
+    </div>
+  );
+}
+
+// ── Category breakdown list ───────────────────────────────────────────────────
+const CATEGORIES = [
+  'Food & Dining','Transport','Investments','Shopping',
+  'Utilities & Bills','Entertainment','Health & Medical',
+  'Travel','Education','Transfers','Income','Other',
+];
+
+const CAT_COLORS = [
+  '#58a6ff','#3fb950','#f85149','#a371f7','#e3b341',
+  '#79c0ff','#56d364','#ff7b72','#d2a8ff','#ffa657',
+  '#388bfd','#26a641',
+];
+
+function CategoryChart({ month, onCategoryClick }) {
+  const [cats, setCats] = useState(null);
+
+  useEffect(() => {
+    setCats(null);
+    const url = month ? `/api/stats/categories?month=${month}` : '/api/stats/categories';
+    apiFetch(url).then(d => setCats(d.categories)).catch(console.error);
+  }, [month]);
+
+  const grandTotal = cats ? cats.reduce((s, c) => s + c.total, 0) : 0;
+  const maxVal     = cats && cats.length > 0 ? cats[0].total : 1;
+
+  return (
+    <div className="chart-card" style={{display:'flex', flexDirection:'column'}}>
+      <div className="chart-title" style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'0.9rem'}}>
+        <span>Spend by Category{month ? ` · ${monthLabel(month)}` : ''}</span>
+        <span style={{fontSize:'0.68rem', color:'var(--muted)', fontWeight:400}}>Click row to filter</span>
+      </div>
+
+      {!cats ? (
+        <div className="loading"><div className="spinner"/>Loading…</div>
+      ) : cats.length === 0 ? (
+        <div className="empty" style={{padding:'1.5rem 0', fontSize:'0.8rem'}}>
+          No categorized data yet.<br/>
+          <span style={{color:'var(--blue)', cursor:'pointer'}} onClick={() => window.location.hash='sync'}>
+            Run categorization in Sync →
+          </span>
+        </div>
+      ) : (
+        <div style={{display:'flex', flexDirection:'column'}}>
+          {cats.map((c, i) => {
+            const pct  = grandTotal > 0 ? ((c.total / grandTotal) * 100).toFixed(1) : 0;
+            const barW = maxVal    > 0 ? ((c.total / maxVal)     * 100).toFixed(1) : 0;
+            const col  = CAT_COLORS[i % CAT_COLORS.length];
+            return (
+              <div
+                key={c.category}
+                onClick={() => onCategoryClick?.(c.category)}
+                style={{
+                  cursor: 'pointer',
+                  padding: '0.42rem 0.5rem',
+                  borderRadius: '6px',
+                  transition: 'background 0.1s',
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = 'var(--surface2)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+              >
+                {/* Name + amount */}
+                <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'4px'}}>
+                  <span style={{display:'flex', alignItems:'center', gap:'6px'}}>
+                    <span style={{width:'7px', height:'7px', borderRadius:'50%', background:col, flexShrink:0}}/>
+                    <span style={{fontSize:'0.8rem', fontWeight:500}}>{c.category}</span>
+                  </span>
+                  <span style={{display:'flex', alignItems:'center', gap:'8px'}}>
+                    <span style={{fontSize:'0.68rem', color:'var(--subtle)'}}>{pct}% · {c.count} txn</span>
+                    <span style={{fontSize:'0.8rem', fontWeight:700, color:col, minWidth:'70px', textAlign:'right'}}>{inr(c.total)}</span>
+                  </span>
+                </div>
+                {/* Inline bar */}
+                <div style={{height:'3px', background:'var(--border)', borderRadius:'2px'}}>
+                  <div style={{height:'100%', width:`${barW}%`, background:col, borderRadius:'2px'}}/>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Dashboard({ onMerchantClick, onMonthClick, onCategoryClick }) {
+  const [month, setMonth] = useState('');
+  const [months, setMonths] = useState([]);
+
+  useEffect(() => {
+    apiFetch('/api/stats/months').then(d => setMonths(d.months)).catch(console.error);
+  }, []);
+
+  return (
+    <div className="page">
+      <div className="page-header page-header-row">
+        <div>
+          <h2>Dashboard</h2>
+          <p>Your personal finance overview</p>
+        </div>
+        <div className="month-picker">
+          <label>Month</label>
+          <select className="filter-select" value={month} onChange={e => setMonth(e.target.value)}>
+            <option value="">Current</option>
+            {months.map(m => (
+              <option key={m} value={m}>{monthLabel(m)}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <MonthlyAnalysis month={month} onMonthClick={onMonthClick} />
+
+      {/* Row 1: Monthly trend + Category breakdown */}
+      <div className="charts-row">
+        <MonthlyChart onMonthClick={onMonthClick} />
+        <CategoryChart month={month} onCategoryClick={onCategoryClick} />
+      </div>
+
+      {/* Row 2: Top merchants — full width so bars have room */}
+      <MerchantsChart month={month} onMerchantClick={onMerchantClick} />
+
+      {/* Row 3: Recent transactions */}
+      <RecentTransactions month={month} />
+    </div>
+  );
+}
+
+// ── Transaction detail modal ──────────────────────────────────────────────────
+function TransactionModal({ tx, onClose, allCategories, onCategoryChange }) {
+  const [cat, setCat]       = useState(tx.category || 'Uncategorized');
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved]   = useState(false);
+
+  useEffect(() => {
+    const onKey = e => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
+  const saveCategory = async () => {
+    setSaving(true);
+    try {
+      await apiFetch(`/api/transactions/${tx.id}/category`, {
+        method: 'PATCH',
+        body: JSON.stringify({ category: cat }),
+      });
+      setSaved(true);
+      onCategoryChange && onCategoryChange(tx.id, cat);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const isDebit = tx.type === 'debit';
+  const col = isDebit ? 'var(--red)' : 'var(--green)';
+  const cats = allCategories && allCategories.length > 0
+    ? allCategories
+    : ['Uncategorized'];
+
+  const Field = ({ label, value, mono }) => value ? (
+    <div className="tx-field">
+      <span className="tx-field-label">{label}</span>
+      <span className="tx-field-value" style={mono ? {fontFamily:'Courier New,monospace', fontSize:'0.78rem', color:'var(--muted)'} : {}}>
+        {value}
+      </span>
+    </div>
+  ) : null;
+
+  return (
+    <div className="modal-backdrop" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="modal">
+        <div className="modal-header">
+          <span className="modal-title">Transaction Details</span>
+          <button className="modal-close" onClick={onClose}>✕</button>
+        </div>
+        <div className="modal-body">
+          {/* Hero amount */}
+          <div className="tx-amount-hero">
+            <div className="amount" style={{color: col}}>
+              {isDebit ? '−' : '+'}{inr(tx.amount)}
+            </div>
+            <div className="meta">
+              <span className={`badge badge-${tx.type}`} style={{marginRight:'8px'}}>{tx.type}</span>
+            </div>
+          </div>
+
+          {/* Fields */}
+          <div className="tx-fields">
+            <Field label="Merchant"  value={tx.merchant} />
+            <Field label="Date"      value={fmtDate(tx.date)} />
+            <Field label="Notes"     value={tx.notes} />
+            <Field label="Sender"    value={tx.sender} />
+            <Field label="Email ID"  value={tx.email_id} mono />
+          </div>
+
+          {/* Category edit */}
+          <div style={{marginTop:'1rem', paddingTop:'1rem', borderTop:'1px solid var(--border)'}}>
+            <div style={{fontSize:'0.72rem', color:'var(--muted)', marginBottom:'0.4rem', textTransform:'uppercase', letterSpacing:'0.5px'}}>Category</div>
+            <div style={{display:'flex', gap:'0.5rem', alignItems:'center'}}>
+              <select
+                className="filter-select"
+                style={{flex:1}}
+                value={cat}
+                onChange={e => { setCat(e.target.value); setSaved(false); }}
+              >
+                <option value="Uncategorized">Uncategorized</option>
+                {cats.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+              <button
+                className="btn btn-primary"
+                style={{flexShrink:0}}
+                onClick={saveCategory}
+                disabled={saving || cat === tx.category}
+              >
+                {saving ? 'Saving…' : saved ? 'Saved!' : 'Save'}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Transactions ─────────────────────────────────────────────────────────────
+function Transactions({ initMerchant = '', initFromDate = '', initToDate = '', initCategory = '' }) {
+  const [data, setData] = useState({ transactions:[], total:0 });
+  const [page, setPage] = useState(1);
+  const [merchant, setMerchant] = useState(initMerchant);
+  const [debouncedMerchant, setDebouncedMerchant] = useState(initMerchant);
+  const [merchantList, setMerchantList] = useState([]);
+  const [categoryList, setCategoryList] = useState([]);
+  const [type, setType] = useState('');
+  const [category, setCategory] = useState(initCategory);
+  const [fromDate, setFromDate] = useState(initFromDate);
+  const [toDate, setToDate] = useState(initToDate);
+  const [minAmount, setMinAmount] = useState('');
+  const [maxAmount, setMaxAmount] = useState('');
+  const [sort, setSort] = useState({ col:'id', dir:'desc' });
+  const [loading, setLoading] = useState(false);
+  const [selected, setSelected] = useState(null);
+  const LIMIT = 25;
+
+  useEffect(() => {
+    apiFetch('/api/merchants').then(d => setMerchantList(d.merchants)).catch(console.error);
+    apiFetch('/api/categories').then(d => setCategoryList(d.categories)).catch(console.error);
+  }, []);
+
+  // Sync merchant → debouncedMerchant (no debounce needed for select)
+  useEffect(() => { setDebouncedMerchant(merchant); }, [merchant]);
+
+  // Single fetch effect — all filter state read directly, no stale closures
+  useEffect(() => {
+    setLoading(true);
+    const q = new URLSearchParams({ page, limit:LIMIT, sort:sort.col, order:sort.dir });
+    if (type)              q.set('type', type);
+    if (debouncedMerchant) q.set('merchant', debouncedMerchant);
+    if (category)          q.set('category', category);
+    if (fromDate)          q.set('from_date', fromDate);
+    if (toDate)            q.set('to_date', toDate);
+    if (minAmount)         q.set('min_amount', minAmount);
+    if (maxAmount)         q.set('max_amount', maxAmount);
+    apiFetch(`/api/transactions?${q}`)
+      .then(setData)
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [page, debouncedMerchant, type, category, fromDate, toDate, minAmount, maxAmount, sort]);
+
+  const toggleSort = col => {
+    const d = sort.col === col && sort.dir === 'asc' ? 'desc' : 'asc';
+    setSort({ col, dir: d });
+    setPage(1);
+  };
+  const SortArrow = ({ col }) => sort.col === col ? (sort.dir === 'asc' ? ' ↑' : ' ↓') : '';
+  const totalPages = Math.max(1, Math.ceil(data.total / LIMIT));
+
+  return (
+    <div className="page">
+      {selected && <TransactionModal
+        tx={selected}
+        onClose={() => setSelected(null)}
+        allCategories={categoryList}
+        onCategoryChange={(id, newCat) => {
+          setData(d => ({
+            ...d,
+            transactions: d.transactions.map(t => t.id === id ? {...t, category: newCat} : t),
+          }));
+          setSelected(s => s && s.id === id ? {...s, category: newCat} : s);
+        }}
+      />}
+      <div className="page-header">
+        <h2>Transactions</h2>
+        <p>{data.total.toLocaleString()} transactions total</p>
+      </div>
+
+      <div className="filters">
+        <select
+          className="filter-select"
+          style={{minWidth:'180px'}}
+          value={merchant}
+          onChange={e => { setMerchant(e.target.value); setPage(1); }}
+        >
+          <option value="">All merchants</option>
+          {merchantList.map(m => <option key={m} value={m}>{m}</option>)}
+        </select>
+        <select className="filter-select" value={type} onChange={e => { setType(e.target.value); setPage(1); }}>
+          <option value="">All types</option>
+          <option value="debit">Debit</option>
+          <option value="credit">Credit</option>
+        </select>
+        <select className="filter-select" style={{minWidth:'160px'}} value={category} onChange={e => { setCategory(e.target.value); setPage(1); }}>
+          <option value="">All categories</option>
+          {categoryList.map(c => <option key={c} value={c}>{c}</option>)}
+          <option value="Uncategorized">Uncategorized</option>
+        </select>
+        <input
+          className="filter-input"
+          type="date"
+          title="From date"
+          value={fromDate}
+          style={{minWidth:'140px'}}
+          onChange={e => { setFromDate(e.target.value); setPage(1); }}
+        />
+        <input
+          className="filter-input"
+          type="date"
+          title="To date"
+          value={toDate}
+          style={{minWidth:'140px'}}
+          onChange={e => { setToDate(e.target.value); setPage(1); }}
+        />
+        <input
+          className="filter-input"
+          type="number"
+          placeholder="Min ₹"
+          value={minAmount}
+          style={{minWidth:'90px'}}
+          onChange={e => { setMinAmount(e.target.value); setPage(1); }}
+        />
+        <input
+          className="filter-input"
+          type="number"
+          placeholder="Max ₹"
+          value={maxAmount}
+          style={{minWidth:'90px'}}
+          onChange={e => { setMaxAmount(e.target.value); setPage(1); }}
+        />
+        {(type || merchant || category || fromDate || toDate || minAmount || maxAmount) && (
+          <button className="btn" onClick={() => {
+            setMerchant(''); setType(''); setCategory('');
+            setFromDate(''); setToDate('');
+            setMinAmount(''); setMaxAmount('');
+            setPage(1);
+          }}>
+            Clear
+          </button>
+        )}
+      </div>
+
+      <div className="table-card">
+        <table>
+          <thead>
+            <tr>
+              <th onClick={() => toggleSort('date')}>Date<SortArrow col="date" /></th>
+              <th onClick={() => toggleSort('merchant')}>Merchant<SortArrow col="merchant" /></th>
+              <th onClick={() => toggleSort('type')}>Type<SortArrow col="type" /></th>
+              <th>Category</th>
+              <th onClick={() => toggleSort('amount')} style={{textAlign:'right'}}>Amount<SortArrow col="amount" /></th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr><td colSpan={6} style={{textAlign:'center', padding:'2rem'}}>
+                <div className="loading" style={{justifyContent:'center'}}><div className="spinner"/>Loading…</div>
+              </td></tr>
+            ) : data.transactions.length === 0 ? (
+              <tr><td colSpan={6} className="empty">No transactions found</td></tr>
+            ) : data.transactions.map(t => (
+              <tr key={t.id} onClick={() => setSelected(t)} style={{cursor:'pointer'}}>
+                <td><span className="date-text">{fmtDate(t.date)}</span></td>
+                <td><span className="merchant-name">{t.merchant || '—'}</span></td>
+                <td><span className={`badge badge-${t.type}`}>{t.type}</span></td>
+                <td>
+                  {t.category && t.category !== 'Uncategorized'
+                    ? <span className="badge badge-cat">{t.category}</span>
+                    : <span style={{color:'var(--subtle)', fontSize:'0.75rem'}}>{t.category || '—'}</span>
+                  }
+                </td>
+                <td style={{textAlign:'right'}}><span className={`amount-${t.type}`}>{inr(t.amount)}</span></td>
+                <td><span className="notes-text" title={t.notes}>{t.notes || '—'}</span></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        <div className="pagination">
+          <span className="pagination-info">
+            {data.total > 0
+              ? `${((page-1)*LIMIT+1).toLocaleString()}–${Math.min(page*LIMIT, data.total).toLocaleString()} of ${data.total.toLocaleString()}`
+              : 'No results'}
+          </span>
+          <div className="pagination-btns">
+            <button className="btn" onClick={() => setPage(p => p-1)} disabled={page <= 1}>← Prev</button>
+            <span className="page-num">{page} / {totalPages}</span>
+            <button className="btn" onClick={() => setPage(p => p+1)} disabled={page >= totalPages}>Next →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Chat ──────────────────────────────────────────────────────────────────────
+function Message({ msg }) {
+  const [showSql, setShowSql] = useState(false);
+  const isUser = msg.role === 'user';
+
+  return (
+    <div className={`message ${msg.role}`}>
+      <div className={`avatar ${isUser ? 'avatar-user' : 'avatar-assistant'}`}>
+        {isUser ? 'You' : 'AI'}
+      </div>
+      <div className={`bubble ${isUser ? 'bubble-user' : ''}`}>
+        <div className="bubble-text">{msg.text}</div>
+        {msg.sql && (
+          <>
+            <div className="sql-toggle" onClick={() => setShowSql(v => !v)}>
+              {showSql ? '▾' : '▸'} SQL query
+            </div>
+            {showSql && <div className="sql-block">{msg.sql}</div>}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function Chat() {
+  const [messages, setMessages] = useState([{
+    role:'assistant',
+    text:'Hi! Ask me anything about your finances.\n\nExamples:\n• "How much did I spend last month?"\n• "What are my top 5 merchants?"\n• "Show credits from April 2026"',
+    sql:''
+  }]);
+  const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
+  const bottomRef = useRef(null);
+
+  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior:'smooth' }); }, [messages, loading]);
+
+  const send = async () => {
+    if (!input.trim() || loading) return;
+    const q = input.trim();
+    setInput('');
+    setMessages(m => [...m, { role:'user', text:q, sql:'' }]);
+    setLoading(true);
+    try {
+      const res = await apiFetch('/api/query', { method:'POST', body: JSON.stringify({ message:q }) });
+      setMessages(m => [...m, { role:'assistant', text: res.answer, sql: res.sql || '' }]);
+    } catch {
+      setMessages(m => [...m, { role:'assistant', text:'⚠ Error contacting server. Make sure Ollama is running.', sql:'' }]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const clear = async () => {
+    await apiFetch('/api/query/reset', { method:'POST' });
+    setMessages([{ role:'assistant', text:'History cleared. What would you like to know?', sql:'' }]);
+  };
+
+  return (
+    <div className="page" style={{height:'100vh', overflow:'hidden', display:'flex', flexDirection:'column', paddingBottom:'1.5rem'}}>
+      <div className="page-header page-header-row">
+        <div><h2>Finance Chat</h2><p>Ask questions in plain English — powered by Llama 3</p></div>
+        <button className="btn" onClick={clear}>Clear history</button>
+      </div>
+
+      <div className="chat-messages">
+        {messages.map((m, i) => <Message key={i} msg={m} />)}
+        {loading && (
+          <div className="message assistant">
+            <div className="avatar avatar-assistant">AI</div>
+            <div className="bubble">
+              <div className="loading"><div className="spinner"/>Querying with Llama 3…</div>
+            </div>
+          </div>
+        )}
+        <div ref={bottomRef} />
+      </div>
+
+      <div className="chat-input-area">
+        <div className="chat-input-row">
+          <textarea
+            className="chat-input"
+            placeholder="Ask about your finances… (Enter to send, Shift+Enter for newline)"
+            value={input}
+            rows={2}
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
+          />
+          <button className="btn btn-primary" onClick={send} disabled={loading || !input.trim()}>
+            Send
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Deduplicate card (used inside Sync) ──────────────────────────────────────
+function DeduplicateCard() {
+  const [preview, setPreview] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [done, setDone] = useState(null);
+
+  const loadPreview = () => {
+    setLoading(true);
+    apiFetch('/api/deduplicate/preview')
+      .then(d => { setPreview(d); setDone(null); })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  };
+
+  const runDedup = () => {
+    setLoading(true);
+    apiFetch('/api/deduplicate/run', { method: 'POST' })
+      .then(d => { setDone(d.removed); setPreview(null); loadPreview(); })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => { loadPreview(); }, []);
+
+  const count = preview?.duplicate_count ?? null;
+
+  return (
+    <div className="card">
+      <div className="card-label" style={{marginBottom:'0.5rem'}}>Duplicate Transactions</div>
+      {loading ? (
+        <div className="loading"><div className="spinner"/>Scanning…</div>
+      ) : (
+        <>
+          {done !== null && (
+            <div style={{fontSize:'0.78rem', color:'var(--green)', marginBottom:'0.5rem'}}>
+              ✓ Removed {done} duplicate{done !== 1 ? 's' : ''}
+            </div>
+          )}
+          <div style={{fontSize:'0.78rem', color: count > 0 ? 'var(--yellow)' : 'var(--muted)', marginBottom:'0.65rem'}}>
+            {count === null ? '—' : count === 0
+              ? '✓ No duplicates found'
+              : `${count} duplicate transaction${count !== 1 ? 's' : ''} detected`}
+          </div>
+          {count > 0 && preview?.groups?.slice(0,3).map((g, i) => (
+            <div key={i} style={{fontSize:'0.72rem', color:'var(--muted)', marginBottom:'3px', paddingLeft:'0.5rem', borderLeft:'2px solid var(--border)'}}>
+              {g.keep.merchant} · ₹{g.keep.amount} · {g.remove.length} extra
+            </div>
+          ))}
+          {preview?.groups?.length > 3 && (
+            <div style={{fontSize:'0.72rem', color:'var(--subtle)', marginBottom:'0.5rem', paddingLeft:'0.5rem'}}>
+              …and {preview.groups.length - 3} more groups
+            </div>
+          )}
+          <div style={{display:'flex', gap:'0.5rem', marginTop:'0.65rem'}}>
+            <button className="btn" style={{flex:1, fontSize:'0.78rem'}} onClick={loadPreview}>
+              Refresh
+            </button>
+            <button
+              className="btn btn-danger"
+              style={{flex:1, fontSize:'0.78rem'}}
+              disabled={!count}
+              onClick={runDedup}
+            >
+              Remove {count > 0 ? count : ''} Dupes
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ── Budgets ───────────────────────────────────────────────────────────────────
+function Budgets() {
+  const [months, setMonths]           = useState([]);
+  const [month, setMonth]             = useState('');
+  const [status, setStatus]           = useState(null);
+  const [editing, setEditing]         = useState(false);
+  const [limits, setLimits]           = useState({});
+  const [saving, setSaving]           = useState(false);
+  const [saveMsg, setSaveMsg]         = useState('');
+  const [allCategories, setAllCats]   = useState(CATEGORIES);
+  const [newCatName, setNewCatName]   = useState('');
+  const [addingCat, setAddingCat]     = useState(false);
+  const [catMsg, setCatMsg]           = useState('');
+
+  const loadCategories = () =>
+    apiFetch('/api/categories').then(d => setAllCats(d.categories)).catch(console.error);
+
+  useEffect(() => {
+    apiFetch('/api/stats/months').then(d => setMonths(d.months)).catch(console.error);
+    loadCategories();
+  }, []);
+
+  const addCategory = async () => {
+    const name = newCatName.trim();
+    if (!name) return;
+    setAddingCat(true);
+    setCatMsg('');
+    try {
+      const d = await apiFetch('/api/categories', { method:'POST', body: JSON.stringify({ name }) });
+      setAllCats(d.categories);
+      setNewCatName('');
+      setCatMsg('Category added!');
+      setTimeout(() => setCatMsg(''), 2500);
+    } catch (e) {
+      setCatMsg(e.message || 'Error');
+    } finally {
+      setAddingCat(false);
+    }
+  };
+
+  const deleteCategory = async (name) => {
+    try {
+      const d = await apiFetch(`/api/categories/${encodeURIComponent(name)}`, { method:'DELETE' });
+      setAllCats(d.categories);
+      setLimits(l => { const n = {...l}; delete n[name]; return n; });
+    } catch (e) {
+      setCatMsg(e.message || 'Error');
+    }
+  };
+
+  const loadStatus = (m) => {
+    setStatus(null);
+    const url = m ? `/api/budgets/status?month=${m}` : '/api/budgets/status';
+    apiFetch(url).then(d => {
+      setStatus(d);
+      // Seed edit inputs from loaded budgets
+      const init = {};
+      d.items.forEach(it => { if (it.budget > 0) init[it.category] = String(it.budget); });
+      setLimits(init);
+    }).catch(console.error);
+  };
+
+  useEffect(() => { loadStatus(month); }, [month]);
+
+  const save = async () => {
+    setSaving(true);
+    setSaveMsg('');
+    const budgets = allCategories.map(cat => ({
+      category: cat,
+      monthly_limit: parseFloat(limits[cat] || '0') || 0,
+    }));
+    try {
+      await apiFetch('/api/budgets', { method:'POST', body: JSON.stringify({ budgets }) });
+      setSaveMsg('Saved!');
+      setEditing(false);
+      loadStatus(month);
+      setTimeout(() => setSaveMsg(''), 2500);
+    } catch {
+      setSaveMsg('Error saving');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const statusColor = (s) => ({
+    ok:        'var(--green)',
+    warning:   'var(--yellow)',
+    over:      'var(--red)',
+    no_budget: 'var(--subtle)',
+  }[s] || 'var(--muted)');
+
+  const statusLabel = (s) => ({
+    ok:        'On track',
+    warning:   'Near limit',
+    over:      'Over budget',
+    no_budget: 'No budget',
+  }[s] || '');
+
+  const barColor = (pct) => {
+    if (pct >= 100) return 'var(--red)';
+    if (pct >= 80)  return 'var(--yellow)';
+    return 'var(--green)';
+  };
+
+  return (
+    <div className="page">
+      {/* Header */}
+      <div className="page-header page-header-row">
+        <div>
+          <h2>Budgets</h2>
+          <p>Set monthly limits per category and track your spending</p>
+        </div>
+        <div style={{display:'flex', gap:'0.65rem', alignItems:'center'}}>
+          <div className="month-picker">
+            <label>Month</label>
+            <select className="filter-select" value={month} onChange={e => setMonth(e.target.value)}>
+              <option value="">Current</option>
+              {months.map(m => <option key={m} value={m}>{monthLabel(m)}</option>)}
+            </select>
+          </div>
+          {saveMsg && <span style={{fontSize:'0.78rem', color:'var(--green)'}}>{saveMsg}</span>}
+          {editing ? (
+            <>
+              <button className="btn" onClick={() => { setEditing(false); loadStatus(month); }}>Cancel</button>
+              <button className="btn btn-primary" onClick={save} disabled={saving}>
+                {saving ? 'Saving…' : 'Save Budgets'}
+              </button>
+            </>
+          ) : (
+            <button className="btn btn-primary" onClick={() => setEditing(true)}>Edit Budgets</button>
+          )}
+        </div>
+      </div>
+
+      {/* Summary cards */}
+      {status && (
+        <div className="cards-grid" style={{marginBottom:'1.5rem'}}>
+          <div className="card">
+            <div className="card-label">Total Budgeted</div>
+            <div className="card-value c-blue">{status.total_budgeted > 0 ? inr(status.total_budgeted) : '—'}</div>
+            <div className="card-sub">This month's limits</div>
+          </div>
+          <div className="card">
+            <div className="card-label">Total Spent</div>
+            <div className={`card-value ${status.total_spent > status.total_budgeted && status.total_budgeted > 0 ? 'c-red' : 'c-yellow'}`}>
+              {inr(status.total_spent)}
+            </div>
+            <div className="card-sub">Across all categories</div>
+          </div>
+          <div className="card">
+            <div className="card-label">Remaining</div>
+            {status.total_budgeted > 0 ? (
+              <>
+                <div className={`card-value ${status.total_budgeted - status.total_spent >= 0 ? 'c-green' : 'c-red'}`}>
+                  {inr(Math.abs(status.total_budgeted - status.total_spent))}
+                </div>
+                <div className="card-sub">{status.total_budgeted - status.total_spent >= 0 ? 'Left to spend' : 'Over budget'}</div>
+              </>
+            ) : (
+              <><div className="card-value c-muted">—</div><div className="card-sub">Set budgets first</div></>
+            )}
+          </div>
+          <div className="card">
+            <div className="card-label">Over Budget</div>
+            <div className={`card-value ${status.over_count > 0 ? 'c-red' : 'c-green'}`}>
+              {status.over_count}
+            </div>
+            <div className="card-sub">
+              {status.over_count === 0 ? 'All within limits' : `categor${status.over_count === 1 ? 'y' : 'ies'} exceeded`}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Category budget rows */}
+      <div className="table-card">
+        <div className="table-header">
+          <span className="table-title">Category Budgets</span>
+          {!editing && <span style={{fontSize:'0.75rem', color:'var(--muted)'}}>Click "Edit Budgets" to set limits</span>}
+        </div>
+
+        {!status ? (
+          <div style={{padding:'2rem', textAlign:'center'}}>
+            <div className="loading" style={{justifyContent:'center'}}><div className="spinner"/>Loading…</div>
+          </div>
+        ) : (
+          <div style={{padding:'0.5rem 0'}}>
+            {(editing ? allCategories : status.items).map((item, i) => {
+              const cat    = editing ? item : item.category;
+              const it     = editing
+                ? (status.items.find(x => x.category === cat) || { spent:0, count:0, pct:null, remaining:null, status:'no_budget', budget:0 })
+                : item;
+              const col    = CAT_COLORS[allCategories.indexOf(cat) % CAT_COLORS.length];
+              const barW   = it.pct !== null ? Math.min(it.pct, 100) : 0;
+
+              return (
+                <div key={cat} style={{
+                  display: 'grid',
+                  gridTemplateColumns: '220px 1fr 130px 130px 100px 110px',
+                  alignItems: 'center',
+                  gap: '1rem',
+                  padding: '0.75rem 1.25rem',
+                  borderBottom: '1px solid var(--border)',
+                }}>
+                  {/* Category name */}
+                  <div style={{display:'flex', alignItems:'center', gap:'8px'}}>
+                    <span style={{width:'8px', height:'8px', borderRadius:'50%', background:col, flexShrink:0}}/>
+                    <span style={{fontSize:'0.85rem', fontWeight:500}}>{cat}</span>
+                  </div>
+
+                  {/* Progress bar */}
+                  <div>
+                    {it.budget > 0 ? (
+                      <>
+                        <div style={{display:'flex', justifyContent:'space-between', marginBottom:'4px'}}>
+                          <span style={{fontSize:'0.7rem', color:'var(--muted)'}}>{it.pct !== null ? `${it.pct}% used` : ''}</span>
+                          <span style={{fontSize:'0.7rem', color: it.status === 'over' ? 'var(--red)' : 'var(--muted)'}}>
+                            {it.status === 'over' ? `${inr(Math.abs(it.remaining))} over` : `${inr(it.remaining)} left`}
+                          </span>
+                        </div>
+                        <div style={{height:'5px', background:'var(--surface2)', borderRadius:'3px'}}>
+                          <div style={{height:'100%', width:`${barW}%`, background: barColor(it.pct), borderRadius:'3px', transition:'width 0.4s'}}/>
+                        </div>
+                      </>
+                    ) : (
+                      <div style={{height:'5px', background:'var(--surface2)', borderRadius:'3px'}}/>
+                    )}
+                  </div>
+
+                  {/* Spent */}
+                  <div style={{textAlign:'right'}}>
+                    <div style={{fontSize:'0.85rem', fontWeight:600, color:'var(--red)'}}>{inr(it.spent)}</div>
+                    <div style={{fontSize:'0.68rem', color:'var(--muted)'}}>{it.count} txn</div>
+                  </div>
+
+                  {/* Budget input or value */}
+                  <div style={{textAlign:'right'}}>
+                    {editing ? (
+                      <div style={{display:'flex', alignItems:'center', gap:'4px', justifyContent:'flex-end'}}>
+                        <span style={{fontSize:'0.8rem', color:'var(--muted)'}}>₹</span>
+                        <input
+                          type="number"
+                          className="filter-input"
+                          placeholder="0"
+                          value={limits[cat] || ''}
+                          style={{width:'100px', textAlign:'right', padding:'0.3rem 0.5rem'}}
+                          onChange={e => setLimits(l => ({...l, [cat]: e.target.value}))}
+                        />
+                      </div>
+                    ) : (
+                      <>
+                        <div style={{fontSize:'0.85rem', fontWeight:600, color:'var(--blue)'}}>
+                          {it.budget > 0 ? inr(it.budget) : <span style={{color:'var(--subtle)'}}>—</span>}
+                        </div>
+                        <div style={{fontSize:'0.68rem', color:'var(--muted)'}}>budget</div>
+                      </>
+                    )}
+                  </div>
+
+                  {/* % used */}
+                  <div style={{textAlign:'right'}}>
+                    {it.pct !== null ? (
+                      <span style={{fontSize:'0.88rem', fontWeight:700, color: barColor(it.pct)}}>
+                        {it.pct}%
+                      </span>
+                    ) : (
+                      <span style={{fontSize:'0.78rem', color:'var(--subtle)'}}>—</span>
+                    )}
+                  </div>
+
+                  {/* Status badge */}
+                  <div style={{textAlign:'right'}}>
+                    <span style={{
+                      display:'inline-block',
+                      padding:'2px 9px',
+                      borderRadius:'20px',
+                      fontSize:'0.65rem',
+                      fontWeight:700,
+                      textTransform:'uppercase',
+                      letterSpacing:'0.4px',
+                      background: statusColor(it.status) + '22',
+                      color: statusColor(it.status),
+                    }}>
+                      {statusLabel(it.status)}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Add custom category */}
+      <div className="table-card" style={{marginTop:'1rem', padding:'1rem 1.25rem'}}>
+        <div style={{display:'flex', alignItems:'center', gap:'0.65rem', flexWrap:'wrap'}}>
+          <span style={{fontSize:'0.8rem', color:'var(--muted)', flexShrink:0}}>Add category</span>
+          <input
+            className="filter-input"
+            placeholder="e.g. Subscriptions"
+            value={newCatName}
+            style={{flex:1, minWidth:'160px'}}
+            onChange={e => setNewCatName(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && addCategory()}
+          />
+          <button className="btn btn-primary" onClick={addCategory} disabled={addingCat || !newCatName.trim()}>
+            {addingCat ? 'Adding…' : 'Add'}
+          </button>
+          {catMsg && <span style={{fontSize:'0.78rem', color:'var(--green)'}}>{catMsg}</span>}
+        </div>
+        {/* Custom categories list (deletable) */}
+        {allCategories.filter(c => !CATEGORIES.includes(c)).length > 0 && (
+          <div style={{marginTop:'0.75rem', display:'flex', flexWrap:'wrap', gap:'0.4rem'}}>
+            {allCategories.filter(c => !CATEGORIES.includes(c)).map(c => (
+              <span key={c} style={{
+                display:'inline-flex', alignItems:'center', gap:'5px',
+                background:'var(--surface2)', border:'1px solid var(--border)',
+                borderRadius:'20px', padding:'2px 10px', fontSize:'0.75rem',
+              }}>
+                {c}
+                <button
+                  onClick={() => deleteCategory(c)}
+                  style={{background:'none', border:'none', cursor:'pointer', color:'var(--subtle)', fontSize:'0.8rem', padding:0, lineHeight:1}}
+                  title="Remove"
+                >✕</button>
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Categorize card (used inside Sync) ───────────────────────────────────────
+function CategorizeCard() {
+  const [status, setStatus] = useState(null);
+  const logRef = useRef(null);
+
+  const poll = () => apiFetch('/api/categorize/status').then(setStatus).catch(console.error);
+
+  useEffect(() => {
+    poll();
+    const id = setInterval(poll, 3000);
+    return () => clearInterval(id);
+  }, []);
+
+  useEffect(() => {
+    if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
+  }, [status?.log]);
+
+  const start = () => apiFetch('/api/categorize/start', { method:'POST' }).then(poll);
+
+  const pct = status && status.total > 0
+    ? Math.round((status.categorized / status.total) * 100) : 0;
+
+  return (
+    <div className="card" style={{marginTop:'0'}}>
+      <div className="card-label" style={{marginBottom:'0.5rem'}}>AI Categorization</div>
+      {status ? (
+        <>
+          <div style={{fontSize:'0.78rem', color:'var(--muted)', marginBottom:'0.5rem'}}>
+            {status.categorized.toLocaleString()} / {status.total.toLocaleString()} transactions ({pct}%)
+            {status.pending > 0 && <span style={{color:'var(--yellow)'}}> · {status.pending} pending</span>}
+          </div>
+          <div className="prog-track" style={{marginBottom:'0.65rem'}}>
+            <div className="prog-fill" style={{width:`${pct}%`}} />
+          </div>
+          <button
+            className="btn btn-primary"
+            style={{width:'100%', fontSize:'0.78rem'}}
+            disabled={status.running || status.pending === 0}
+            onClick={start}
+          >
+            {status.running ? '⟳ Categorizing…' : status.pending === 0 ? '✓ All categorized' : `▶ Categorize ${status.pending} transactions`}
+          </button>
+          {status.log?.length > 0 && (
+            <div className="log-viewer" ref={logRef} style={{height:'120px', marginTop:'0.65rem'}}>
+              {status.log.map((l, i) => <div key={i}>{l}</div>)}
+            </div>
+          )}
+        </>
+      ) : <div className="loading"><div className="spinner"/>Loading…</div>}
+    </div>
+  );
+}
+
+// ── Sync ──────────────────────────────────────────────────────────────────────
+function Sync() {
+  const [status, setStatus] = useState(null);
+  const logRef = useRef(null);
+
+  const poll = () => apiFetch('/api/sync/status').then(setStatus).catch(console.error);
+
+  useEffect(() => {
+    poll();
+    const id = setInterval(poll, 3000);
+    return () => clearInterval(id);
+  }, []);
+
+  useEffect(() => {
+    if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
+  }, [status?.log]);
+
+  const start = () => apiFetch('/api/sync/start', { method:'POST' }).then(poll);
+  const stop  = () => apiFetch('/api/sync/stop',  { method:'POST' }).then(poll);
+
+  const running = status?.running;
+
+  return (
+    <div className="page">
+      <div className="page-header">
+        <h2>Sync</h2>
+        <p>Control Gmail ingestion and monitor activity</p>
+      </div>
+
+      <div className="sync-grid">
+        {/* Left column */}
+        <div style={{display:'flex', flexDirection:'column', gap:'1rem'}}>
+          <div className="card">
+            <div className="card-label">Status</div>
+            <div style={{marginTop:'0.65rem', fontSize:'1rem', fontWeight:600, display:'flex', alignItems:'center'}}>
+              <span className={`dot ${running ? 'dot-on' : 'dot-off'}`}/>
+              {running ? 'Running' : 'Stopped'}
+            </div>
+            <div className="card-sub" style={{marginTop:'0.4rem'}}>
+              {status?.last_run_str ? `Last sync: ${status.last_run_str}` : 'Never synced'}
+            </div>
+          </div>
+
+          <div style={{display:'flex', gap:'0.65rem', flexWrap:'wrap'}}>
+            <button className="btn btn-success" disabled={running} onClick={start}>▶ Start Sync</button>
+            <button className="btn btn-danger"  disabled={!running} onClick={stop}>■ Stop Sync</button>
+          </div>
+
+          <div className="card">
+            <div className="card-label" style={{marginBottom:'0.6rem'}}>Pipeline</div>
+            {[
+              'Gmail API → inbox emails',
+              'Llama 3 classifier (fast path: ₹)',
+              'Llama 3 full extraction',
+              'SQLite → finance_os.db',
+              'Polls every 2 minutes',
+            ].map(l => (
+              <div key={l} style={{fontSize:'0.78rem', color:'var(--muted)', lineHeight:1.9}}>· {l}</div>
+            ))}
+          </div>
+
+          <DeduplicateCard />
+          <CategorizeCard />
+        </div>
+
+        {/* Right column */}
+        <div className="chart-card">
+          <div className="chart-title">Activity Log</div>
+          <div className="log-viewer" ref={logRef}>
+            {status?.log?.length
+              ? status.log.map((l, i) => <div key={i}>{l}</div>)
+              : <div style={{color:'var(--muted)'}}>No activity yet. Press Start Sync to begin.</div>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Sidebar ───────────────────────────────────────────────────────────────────
+const NAV = [
+  { id:'dashboard',    icon:'⬡',  label:'Dashboard'    },
+  { id:'transactions', icon:'≡',  label:'Transactions' },
+  { id:'budgets',      icon:'◈',  label:'Budgets'      },
+  { id:'chat',         icon:'◎',  label:'Chat'         },
+  { id:'sync',         icon:'⟳',  label:'Sync'         },
+];
+
+function Sidebar({ page, setPage }) {
+  return (
+    <div className="sidebar">
+      <div className="sidebar-logo">
+        <h1>Finance OS</h1>
+        <p>Personal finance dashboard</p>
+      </div>
+      {NAV.map(n => (
+        <button
+          key={n.id}
+          className={`nav-btn ${page === n.id ? 'active' : ''}`}
+          onClick={() => setPage(n.id)}
+        >
+          <span className="nav-icon">{n.icon}</span>
+          <span>{n.label}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// ── App ───────────────────────────────────────────────────────────────────────
+function App() {
+  const [page, setPage] = useState('dashboard');
+  const [txFilter, setTxFilter] = useState({ merchant:'', fromDate:'', toDate:'', category:'' });
+
+  const goToMerchant = (merchant) => {
+    setTxFilter({ merchant, fromDate:'', toDate:'', category:'' });
+    setPage('transactions');
+  };
+
+  const goToMonth = (ym) => {
+    const { fromDate, toDate } = monthToDateRange(ym);
+    setTxFilter({ merchant:'', fromDate, toDate, category:'' });
+    setPage('transactions');
+  };
+
+  const goToCategory = (cat) => {
+    setTxFilter({ merchant:'', fromDate:'', toDate:'', category: cat });
+    setPage('transactions');
+  };
+
+  const navTo = (p) => {
+    setPage(p);
+    if (p !== 'transactions') setTxFilter({ merchant:'', fromDate:'', toDate:'', category:'' });
+  };
+
+  return (
+    <div className="layout">
+      <Sidebar page={page} setPage={navTo} />
+      <div className="main">
+        {page === 'dashboard'    && <Dashboard onMerchantClick={goToMerchant} onMonthClick={goToMonth} onCategoryClick={goToCategory} />}
+        {page === 'transactions' && <Transactions key={JSON.stringify(txFilter)} initMerchant={txFilter.merchant} initFromDate={txFilter.fromDate} initToDate={txFilter.toDate} initCategory={txFilter.category} />}
+        {page === 'budgets'      && <Budgets />}
+        {page === 'chat'         && <Chat />}
+        {page === 'sync'         && <Sync />}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
